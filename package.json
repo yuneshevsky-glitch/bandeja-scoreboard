@@ -1,0 +1,17 @@
+{
+  "name": "bandeja-scoreboard",
+  "version": "1.0.0",
+  "description": "Real-time padel scoreboard for live tournaments",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test-engine.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "socket.io": "^4.7.5"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

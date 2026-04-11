@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install:*)",
+      "Bash(export PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\")",
+      "Bash(npm --version)",
+      "Read(//usr/local/bin/**)",
+      "Bash(command -v nvm)",
+      "Read(//Users/yuneshevsky/**)",
+      "Read(//Users/yuneshevsky/.local/share/**)",
+      "Read(//usr/**)",
+      "Read(//opt/**)",
+      "Bash(mdfind \"kMDItemFSName == 'node'\")",
+      "Bash(brew install:*)",
+      "Bash(/opt/homebrew/bin/brew install:*)",
+      "Bash(/usr/local/bin/brew install:*)",
+      "Bash(curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.1/install.sh)",
+      "Bash(bash)"
+    ]
+  }
+}
