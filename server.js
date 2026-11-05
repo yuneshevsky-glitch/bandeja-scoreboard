@@ -67,6 +67,49 @@ function saveState() {
 loadState();
 setInterval(saveState, SAVE_INTERVAL);
 
+// Сохраняем вскоре после каждого изменения, а не только раз в 30 секунд:
+// перезапуск сервера не должен откатывать счёт.
+let saveTimer = null;
+function scheduleSave() {
+  if (saveTimer) return;
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    saveState();
+  }, 1000);
+}
+
+// Порядковый номер состояния корта. Растёт с каждым изменением; табло по нему
+// понимает, что пришло следующее действие (а не повтор при переподключении).
+function bumpSeq(courtId) {
+  const court = courts[courtId];
+  court.seq = (court.seq || 0) + 1;
+  scheduleSave();
+  return court.seq;
+}
+
+function courtPayload(courtId) {
+  const court = courts[courtId];
+  return {
+    courtId,
+    state: court.matchState,
+    historyLength: court.history.length,
+    seq: court.seq || 0,
+    timestamp: Date.now()
+  };
+}
+
+function broadcastCourt(courtId) {
+  const payload = courtPayload(courtId);
+  io.to(`court-${courtId}`).emit('state-update', payload);
+  io.emit('court-summary-update', {
+    courtId,
+    matchState: payload.state,
+    historyLength: payload.historyLength,
+    seq: payload.seq,
+    timestamp: payload.timestamp
+  });
+}
+
 // --- Network helpers ---
 
 function getLocalIPs() {
@@ -170,6 +213,14 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Резервный канал для ТВ: если сокет не поднимается, табло опрашивает этот адрес.
+app.get('/court/:id/state', (req, res) => {
+  const courtId = Number(req.params.id);
+  if (!courts[courtId]) return res.status(404).json({ error: 'Invalid court' });
+  res.set('Cache-Control', 'no-store');
+  res.json(courtPayload(courtId));
+});
+
 app.post('/admin/verify-pin', (req, res) => {
   res.json({ valid: req.body.pin === ADMIN_PIN });
 });
@@ -189,12 +240,7 @@ io.on('connection', (socket) => {
     socket.join(room);
     socket.courtId = courtId;
     socket.mode = mode;
-    socket.emit('state-update', {
-      courtId,
-      state: courts[courtId].matchState,
-      historyLength: courts[courtId].history.length,
-      timestamp: Date.now()
-    });
+    socket.emit('state-update', courtPayload(courtId));
   });
 
   socket.on('get-all-courts', () => {
@@ -268,21 +314,9 @@ io.on('connection', (socket) => {
       }
 
       court.matchState = newState;
+      bumpSeq(courtId);
       socket.emit('action-ack', { success: true, timestamp: Date.now() });
-
-      const updatePayload = {
-        courtId,
-        state: newState,
-        historyLength: court.history.length,
-        timestamp: Date.now()
-      };
-      io.to(`court-${courtId}`).emit('state-update', updatePayload);
-      io.emit('court-summary-update', {
-        courtId,
-        matchState: newState,
-        historyLength: court.history.length,
-        timestamp: Date.now()
-      });
+      broadcastCourt(courtId);
     } catch (e) {
       console.error(`Error processing action ${action} for court ${courtId}:`, e);
       socket.emit('action-ack', { success: false, error: e.message });
@@ -298,19 +332,8 @@ io.on('connection', (socket) => {
     courts[courtId].history = [];
     courts[courtId].matchState = ScoreEngine.createMatch();
     courts[courtId].settings = { format: 'A', teamA: '', teamB: '', server: 'A', deuceMode: 'advantage' };
-    const updatePayload = {
-      courtId,
-      state: courts[courtId].matchState,
-      historyLength: 0,
-      timestamp: Date.now()
-    };
-    io.to(`court-${courtId}`).emit('state-update', updatePayload);
-    io.emit('court-summary-update', {
-      courtId,
-      matchState: courts[courtId].matchState,
-      historyLength: 0,
-      timestamp: Date.now()
-    });
+    bumpSeq(courtId);
+    broadcastCourt(courtId);
     socket.emit('action-ack', { success: true });
   });
 
@@ -319,14 +342,13 @@ io.on('connection', (socket) => {
       socket.emit('action-ack', { success: false, error: 'Invalid PIN' });
       return;
     }
+    const prevSeq = {};
+    for (let i = 1; i <= NUM_COURTS; i++) prevSeq[i] = courts[i].seq || 0;
     initCourts();
     for (let i = 1; i <= NUM_COURTS; i++) {
-      io.to(`court-${i}`).emit('state-update', {
-        courtId: i,
-        state: courts[i].matchState,
-        historyLength: 0,
-        timestamp: Date.now()
-      });
+      courts[i].seq = prevSeq[i];
+      bumpSeq(i);
+      io.to(`court-${i}`).emit('state-update', courtPayload(i));
     }
     io.emit('all-courts-update', { courts: getAllCourtsSummary(), timestamp: Date.now() });
     socket.emit('action-ack', { success: true });

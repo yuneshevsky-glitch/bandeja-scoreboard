@@ -7,12 +7,26 @@
   var Scoreboard = {};
   var timerInterval = null;
 
+  // Надёжность ТВ-экрана. Телевизор никто не трогает, поэтому экран обязан
+  // сам восстанавливаться после любого обрыва связи:
+  // - при каждом переподключении сокета заново входит в комнату корта;
+  // - каждые RESYNC_MS перезапрашивает состояние (страховка от «тихого» обрыва);
+  // - если сокет не поднимается, берёт состояние по HTTP;
+  // - если связи нет дольше RELOAD_AFTER_MS, перезагружает страницу.
+  var RESYNC_MS = 15000;
+  var RELOAD_AFTER_MS = 90000;
+  var MATCH_OVERLAY_MS = 10000;
+
+  var live = null; // { socket, courtId, handlers, timers }
+  var lastSeq = null;
+  var wakeLock = null;
+
   Scoreboard.render = function (container, socket, courtId) {
     container.innerHTML = [
       '<div class="scoreboard" id="scoreboard-view">',
       '  <div class="scoreboard-header">',
       '    <span class="scoreboard-tournament"><img src="img/logo-white.png" alt="" style="height:28px;vertical-align:middle;margin-right:10px;opacity:0.7;">Bandeja Cup</span>',
-      '    <span class="scoreboard-court">Court ' + courtId + '</span>',
+      '    <span class="scoreboard-court">Court ' + courtId + '<span class="sb-conn hidden" id="sb-conn">Нет связи</span></span>',
       '  </div>',
       '  <div class="scoreboard-table" id="sb-table">',
       '    <div class="scoreboard-row" id="sb-row-a"></div>',
@@ -22,16 +36,84 @@
       '</div>'
     ].join('\n');
 
-    socket.emit('join-court', { courtId: courtId, mode: 'display' });
+    lastSeq = null;
+    var lastContact = Date.now();
 
-    socket.on('state-update', function (data) {
-      if (String(data.courtId) === String(courtId)) {
-        renderState(data.state);
+    function join() {
+      if (socket.connected) socket.emit('join-court', { courtId: courtId, mode: 'display' });
+    }
+
+    function onState(data) {
+      if (String(data.courtId) !== String(courtId)) return;
+      lastContact = Date.now();
+      setConnBadge(false);
+      applyState(data);
+    }
+
+    function onConnect() { lastContact = Date.now(); setConnBadge(false); join(); }
+    function onDisconnect() { setConnBadge(true); }
+
+    function onVisible() {
+      if (document.visibilityState !== 'visible') return;
+      requestWakeLock();
+      if (!socket.connected) socket.connect();
+      join();
+    }
+
+    function tick() {
+      if (socket.connected) {
+        join();
+        return;
       }
-    });
+      socket.connect();
+      fetch('/court/' + courtId + '/state', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (data) { lastContact = Date.now(); applyState(data); }
+        })
+        .catch(function () { /* сервер недоступен — ждём следующей попытки */ });
+      if (Date.now() - lastContact > RELOAD_AFTER_MS) location.reload();
+    }
+
+    live = {
+      socket: socket,
+      handlers: { 'state-update': onState, connect: onConnect, disconnect: onDisconnect },
+      onVisible: onVisible,
+      timer: setInterval(tick, RESYNC_MS)
+    };
+    socket.on('state-update', onState);
+    socket.on('connect', onConnect);
+    socket.on('disconnect', onDisconnect);
+    document.addEventListener('visibilitychange', onVisible);
+
+    setConnBadge(!socket.connected);
+    requestWakeLock();
+    join();
   };
 
-  function renderState(state) {
+  // seq растёт на каждое действие судьи. Анимации и заставки показываем только
+  // для следующего по порядку действия: повторная выдача того же состояния
+  // (переподключение, страховочный запрос) их не включает.
+  function applyState(data) {
+    var seq = typeof data.seq === 'number' ? data.seq : null;
+    var isNextAction = lastSeq !== null && seq !== null && seq === lastSeq + 1;
+    if (seq !== null) lastSeq = seq;
+    renderState(data.state, isNextAction);
+  }
+
+  function setConnBadge(offline) {
+    var el = document.getElementById('sb-conn');
+    if (el) el.classList.toggle('hidden', !offline);
+  }
+
+  function requestWakeLock() {
+    try {
+      if (!navigator.wakeLock || (wakeLock && !wakeLock.released)) return;
+      navigator.wakeLock.request('screen').then(function (lock) { wakeLock = lock; }).catch(function () {});
+    } catch (e) { /* не поддерживается браузером телевизора */ }
+  }
+
+  function renderState(state, animate) {
     var d = ScoreEngine.getDisplayScore(state);
     var numSets = d.sets.length;
 
@@ -42,7 +124,9 @@
     renderRow('sb-row-a', d, 'A', numSets);
     renderRow('sb-row-b', d, 'B', numSets);
     renderFooter(d, state);
-    handleEvents(d);
+    // Заставка конца матча не должна пережить начало нового.
+    if (d.status !== 'finished') hideOverlay();
+    if (animate) handleEvents(d);
   }
 
   function renderRow(rowId, d, team, numSets) {
@@ -163,7 +247,7 @@
 
     if (evt.type === 'match') {
       var winner = evt.team === 'A' ? d.teamA : d.teamB;
-      showOverlay('Match', winner + ' Wins!', 0); // stays until dismissed
+      showOverlay('Match', winner + ' Wins!', MATCH_OVERLAY_MS);
     }
   }
 
@@ -187,20 +271,20 @@
       '<div class="overlay-content">',
       '  <div class="overlay-label">' + escHtml(label) + '</div>',
       '  <div class="overlay-team">' + escHtml(text) + '</div>',
-      duration === 0 ? '  <div class="overlay-dismiss">Tap to dismiss</div>' : '',
       '</div>'
     ].join('\n');
 
     overlay.classList.remove('hidden');
 
-    if (duration > 0) {
-      setTimeout(function () { overlay.classList.add('hidden'); }, duration);
-    } else {
-      overlay.addEventListener('click', function dismiss() {
-        overlay.classList.add('hidden');
-        overlay.removeEventListener('click', dismiss);
-      });
-    }
+    clearTimeout(overlayTimer);
+    overlayTimer = setTimeout(hideOverlay, duration);
+  }
+
+  var overlayTimer = null;
+  function hideOverlay() {
+    clearTimeout(overlayTimer);
+    var overlay = document.getElementById('overlay');
+    if (overlay) overlay.classList.add('hidden');
   }
 
   function escHtml(str) {
@@ -211,9 +295,17 @@
 
   Scoreboard.destroy = function (socket) {
     clearInterval(timerInterval);
-    socket.off('state-update');
-    var overlay = document.getElementById('overlay');
-    if (overlay) overlay.classList.add('hidden');
+    if (live) {
+      clearInterval(live.timer);
+      Object.keys(live.handlers).forEach(function (evt) {
+        socket.off(evt, live.handlers[evt]);
+      });
+      document.removeEventListener('visibilitychange', live.onVisible);
+      live = null;
+    }
+    hideOverlay();
+    if (wakeLock && !wakeLock.released) wakeLock.release().catch(function () {});
+    wakeLock = null;
   };
 
   root.Scoreboard = Scoreboard;

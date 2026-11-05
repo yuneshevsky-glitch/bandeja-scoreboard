@@ -1076,3 +1076,19 @@ body {
 .sound-toggle.active {
   opacity: 1;
 }
+
+/* ТВ: индикатор потери связи */
+.sb-conn {
+  margin-left: 16px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: #DB3A2D;
+  color: #fff;
+  font-size: 0.6em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  vertical-align: middle;
+  animation: sbConnPulse 1.6s ease-in-out infinite;
+}
+.sb-conn.hidden { display: none; }
+@keyframes sbConnPulse { 50% { opacity: 0.45; } }

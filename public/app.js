@@ -276,6 +276,14 @@
     return div.innerHTML;
   }
 
+  // === Keep-alive ===
+  // Бесплатный тариф Render усыпляет сервер после 15 минут без HTTP-запросов,
+  // а при засыпании теряется счёт. Пока открыт хоть один экран (ТВ, пульт,
+  // дашборд), раз в 4 минуты отправляем лёгкий запрос, чтобы сервер не засыпал.
+  setInterval(function () {
+    fetch('/health', { cache: 'no-store' }).catch(function () {});
+  }, 4 * 60 * 1000);
+
   // === Init ===
   window.addEventListener('hashchange', router);
   router();

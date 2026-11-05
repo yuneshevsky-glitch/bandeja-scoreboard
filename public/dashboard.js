@@ -21,6 +21,10 @@
     ].join('\n');
 
     socket.emit('get-all-courts');
+    // После обрыва связи забираем актуальное состояние всех кортов.
+    socket.on('connect', requestAll);
+    function requestAll() { socket.emit('get-all-courts'); }
+    Dashboard._requestAll = requestAll;
 
     socket.on('all-courts-update', function (data) {
       courtsData = data.courts;
@@ -125,6 +129,7 @@
   Dashboard.destroy = function (socket) {
     socket.off('all-courts-update');
     socket.off('court-summary-update');
+    if (Dashboard._requestAll) socket.off('connect', Dashboard._requestAll);
   };
 
   root.Dashboard = Dashboard;
