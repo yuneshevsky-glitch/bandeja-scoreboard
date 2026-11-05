@@ -23,18 +23,33 @@
 
   Scoreboard.render = function (container, socket, courtId) {
     container.innerHTML = [
-      '<div class="scoreboard" id="scoreboard-view">',
-      '  <div class="scoreboard-header">',
-      '    <span class="scoreboard-tournament"><img src="img/logo-white.png" alt="" style="height:28px;vertical-align:middle;margin-right:10px;opacity:0.7;">Bandeja Cup</span>',
-      '    <span class="scoreboard-court">Court ' + courtId + '<span class="sb-conn hidden" id="sb-conn">Нет связи</span></span>',
-      '  </div>',
-      '  <div class="scoreboard-table" id="sb-table">',
-      '    <div class="scoreboard-row" id="sb-row-a"></div>',
-      '    <div class="scoreboard-row" id="sb-row-b"></div>',
-      '  </div>',
-      '  <div class="scoreboard-footer" id="sb-footer"></div>',
+      '<div class="tv" id="scoreboard-view">',
+      '  <header class="tv-head">',
+      '    <img class="tv-sign" src="brand/bal-sign.svg" alt="Bandeja Amateur League">',
+      '    <div class="tv-head-text">',
+      '      <span class="tv-league">Bandeja Amateur League</span>',
+      '      <span class="tv-event" id="tv-event"></span>',
+      '    </div>',
+      '    <img class="tv-chevrons" src="brand/bal-chevrons.svg" alt="">',
+      '    <div class="tv-court"><span>Корт</span><b>' + courtId + '</b></div>',
+      '    <span class="sb-conn hidden" id="sb-conn">Нет связи</span>',
+      '  </header>',
+      '  <main class="tv-board" id="sb-table">',
+      '    <section class="tv-team" id="sb-row-a"></section>',
+      '    <section class="tv-team" id="sb-row-b"></section>',
+      '  </main>',
+      '  <footer class="tv-foot">',
+      '    <div class="tv-partners">',
+      '      <img src="brand/mfp-white.svg" alt="МФП">',
+      '      <img src="brand/fonbet-white.svg" alt="FONBET">',
+      '    </div>',
+      '    <div class="tv-status" id="sb-footer"></div>',
+      '  </footer>',
       '</div>'
     ].join('\n');
+
+    // Фото подгружаются один раз; до этого табло показывает фамилии без портретов.
+    Players.load().then(function () { if (lastData) renderState(lastData.state, false); });
 
     lastSeq = null;
     var lastContact = Date.now();
@@ -94,7 +109,11 @@
   // seq растёт на каждое действие судьи. Анимации и заставки показываем только
   // для следующего по порядку действия: повторная выдача того же состояния
   // (переподключение, страховочный запрос) их не включает.
+  var lastData = null;
+
   function applyState(data) {
+    lastData = data;
+    renderEvent(data.event);
     var seq = typeof data.seq === 'number' ? data.seq : null;
     var isNextAction = lastSeq !== null && seq !== null && seq === lastSeq + 1;
     if (seq !== null) lastSeq = seq;
@@ -113,67 +132,100 @@
     } catch (e) { /* не поддерживается браузером телевизора */ }
   }
 
+  function renderEvent(event) {
+    var el = document.getElementById('tv-event');
+    if (el) el.textContent = (event && event.title) || '';
+  }
+
   function renderState(state, animate) {
     var d = ScoreEngine.getDisplayScore(state);
     var numSets = d.sets.length;
 
-    // Set CSS variable for grid columns
     var table = document.getElementById('sb-table');
-    if (table) table.style.setProperty('--num-sets', numSets);
+    if (!table) return;
+    table.style.setProperty('--num-sets', numSets);
+    var hasPhotos = hasAnyPhoto(state);
+    table.classList.toggle('no-photos', !hasPhotos);
 
-    renderRow('sb-row-a', d, 'A', numSets);
-    renderRow('sb-row-b', d, 'B', numSets);
+    renderRow('sb-row-a', d, state, 'A', numSets);
+    renderRow('sb-row-b', d, state, 'B', numSets);
     renderFooter(d, state);
     // Заставка конца матча не должна пережить начало нового.
     if (d.status !== 'finished') hideOverlay();
     if (animate) handleEvents(d);
   }
 
-  function renderRow(rowId, d, team, numSets) {
+  function hasAnyPhoto(state) {
+    var ids = (state.playersA || []).concat(state.playersB || []);
+    return ids.some(function (id) { return !!Players.get(id); });
+  }
+
+  function renderRow(rowId, d, state, team, numSets) {
     var row = document.getElementById(rowId);
     if (!row) return;
 
-    var isServer = d.server === team;
-    var name = team === 'A' ? d.teamA : d.teamB;
-    var point = team === 'A' ? d.pointA : d.pointB;
+    var live = d.status === 'in_progress';
+    var isServerTeam = live && d.server === team;
+    var ids = (team === 'A' ? state.playersA : state.playersB) || [null, null];
+    var servingIdx = (state.servingPlayer && state.servingPlayer[team]) || 0;
+    var players = ids.map(function (id) { return Players.get(id); });
+    var anyPlayer = players[0] || players[1];
 
+    var point = team === 'A' ? d.pointA : d.pointB;
     var pointDisplay = point;
-    if (d.isAdvantage === team) {
-      pointDisplay = 'AD';
-    } else if (d.isAdvantage && d.isAdvantage !== team) {
-      pointDisplay = '';
-    }
+    if (d.isAdvantage === team) pointDisplay = 'AD';
+    else if (d.isAdvantage) pointDisplay = '';
+
+    var won = d.status === 'finished' && d.winner === team;
+    row.className = 'tv-team' + (isServerTeam ? ' is-serving' : '') + (won ? ' is-winner' : '');
 
     var html = '';
-    // Serve indicator
-    html += '<div class="scoreboard-serve">';
-    if (isServer && d.status === 'in_progress') {
-      html += '<div class="serve-dot"></div>';
+
+    // Портреты
+    html += '<div class="tv-photos">';
+    for (var i = 0; i < 2; i++) {
+      var p = players[i];
+      var serving = isServerTeam && servingIdx === i;
+      html += '<figure class="tv-photo' + (serving ? ' is-serving' : '') + (p ? '' : ' is-empty') + '">';
+      html += p ? '<img src="' + p.photo + '" alt="' + escAttr(p.surname) + '">' : '<img class="tv-photo-mark" src="brand/bal-sign.svg" alt="">';
+      if (serving) html += '<span class="tv-ball" aria-label="Подаёт"></span>';
+      html += '</figure>';
     }
     html += '</div>';
 
-    // Name
-    html += '<div class="scoreboard-name">' + escHtml(name || '---') + '</div>';
+    // Фамилии: по игроку на строку, мяч у подающего
+    html += '<div class="tv-names">';
+    if (anyPlayer) {
+      for (var j = 0; j < 2; j++) {
+        var pl = players[j];
+        var srv = isServerTeam && servingIdx === j;
+        html += '<div class="tv-player' + (srv ? ' is-serving' : '') + '">' +
+          '<span class="tv-surname">' + escHtml(pl ? pl.surname || 'Игрок' : '—') + '</span>' +
+          (srv ? '<span class="tv-ball tv-ball-inline" aria-label="Подаёт"></span>' : '') +
+          '</div>';
+      }
+    } else {
+      var name = team === 'A' ? d.teamA : d.teamB;
+      html += '<div class="tv-player' + (isServerTeam ? ' is-serving' : '') + '">' +
+        '<span class="tv-surname">' + escHtml(name || '—') + '</span>' +
+        (isServerTeam ? '<span class="tv-ball tv-ball-inline" aria-label="Подаёт"></span>' : '') +
+        '</div>';
+    }
+    html += '</div>';
 
-    // Set scores
+    // Сеты
     for (var s = 0; s < numSets; s++) {
       var games = team === 'A' ? d.sets[s].gamesA : d.sets[s].gamesB;
-      var wonClass = '';
-      if (!d.sets[s].isCurrentSet) {
-        var otherGames = team === 'A' ? d.sets[s].gamesB : d.sets[s].gamesA;
-        if (games > otherGames) wonClass = ' won';
-      } else {
-        wonClass = ' current';
-      }
-      html += '<div class="scoreboard-set-score' + wonClass + '">' + games + '</div>';
+      var other = team === 'A' ? d.sets[s].gamesB : d.sets[s].gamesA;
+      var cls = 'tv-set';
+      if (d.sets[s].isCurrentSet && live) cls += ' is-current';
+      else if (games > other) cls += ' is-won';
+      html += '<div class="' + cls + '">' + games + '</div>';
     }
 
-    // Current point
-    if (d.status === 'in_progress') {
-      html += '<div class="scoreboard-point">' + pointDisplay + '</div>';
-    } else {
-      html += '<div class="scoreboard-point"></div>';
-    }
+    // Текущее очко
+    html += '<div class="tv-point' + (pointDisplay === 'AD' ? ' is-ad' : '') + '">' +
+      (live ? pointDisplay : '') + '</div>';
 
     row.innerHTML = html;
   }
@@ -185,28 +237,20 @@
     var parts = [];
 
     if (d.status === 'in_progress') {
-      if (d.isSuperTiebreak) {
-        parts.push('<span class="scoreboard-tiebreak-label">Super Tiebreak</span>');
-      } else if (d.isTiebreak) {
-        parts.push('<span class="scoreboard-tiebreak-label">Tiebreak</span>');
-      } else if (d.isDeuce) {
-        parts.push('<span class="scoreboard-deuce-label">Deuce</span>');
-      }
+      if (d.isSuperTiebreak) parts.push('<span class="tv-flag">Супер-тай-брейк</span>');
+      else if (d.isTiebreak) parts.push('<span class="tv-flag">Тай-брейк</span>');
+      else if (d.isDeuce) parts.push('<span class="tv-flag">Ровно</span>');
 
-      parts.push('<span class="scoreboard-set-info">Set ' + d.currentSet + ' of ' + d.totalSets + '</span>');
-
-      if (state.matchStartTime) {
-        parts.push('<span class="scoreboard-timer" id="sb-timer"></span>');
-      }
+      parts.push('<span>Сет ' + d.currentSet + ' из ' + d.totalSets + '</span>');
+      if (state.matchStartTime) parts.push('<span class="tv-timer" id="sb-timer"></span>');
     } else if (d.status === 'waiting') {
-      parts.push('<span class="scoreboard-set-info">' + d.formatName + ' Format</span>');
+      parts.push('<span>Скоро начало</span>');
     } else if (d.status === 'finished') {
-      parts.push('<span class="scoreboard-set-info" style="color: var(--color-accent);">Match Complete</span>');
+      parts.push('<span class="tv-flag">Матч завершён</span>');
     }
 
-    footer.innerHTML = parts.join('');
+    footer.innerHTML = parts.join('<span class="tv-dot" aria-hidden="true"></span>');
 
-    // Update timer
     clearInterval(timerInterval);
     if (state.matchStartTime && d.status === 'in_progress') {
       updateTimer(state.matchStartTime);
@@ -237,17 +281,17 @@
 
     if (evt.type === 'game') {
       flashRow(evt.team);
-      showOverlay('Game', evt.team === 'A' ? d.teamA : d.teamB, 1200);
+      showOverlay('Гейм', evt.team === 'A' ? d.teamA : d.teamB, 1600);
     }
 
     if (evt.type === 'set') {
       var teamName = evt.team === 'A' ? d.teamA : d.teamB;
-      showOverlay('Set ' + (evt.setIndex + 1), teamName, 2500);
+      showOverlay('Сет ' + (evt.setIndex + 1), teamName, 3000);
     }
 
     if (evt.type === 'match') {
       var winner = evt.team === 'A' ? d.teamA : d.teamB;
-      showOverlay('Match', winner + ' Wins!', MATCH_OVERLAY_MS);
+      showOverlay('Победа', winner, MATCH_OVERLAY_MS);
     }
   }
 
@@ -269,6 +313,7 @@
 
     overlay.innerHTML = [
       '<div class="overlay-content">',
+      '  <img class="overlay-chevrons" src="brand/bal-chevrons-white.svg" alt="">',
       '  <div class="overlay-label">' + escHtml(label) + '</div>',
       '  <div class="overlay-team">' + escHtml(text) + '</div>',
       '</div>'
@@ -285,6 +330,10 @@
     clearTimeout(overlayTimer);
     var overlay = document.getElementById('overlay');
     if (overlay) overlay.classList.add('hidden');
+  }
+
+  function escAttr(str) {
+    return String(str || '').replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
   function escHtml(str) {

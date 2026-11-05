@@ -7,6 +7,7 @@
   var socket = io();
   var currentView = null;
   var adminAuthenticated = false;
+  var adminPin = '';
 
   function router() {
     var hash = location.hash || '#/';
@@ -56,11 +57,12 @@
   function renderPinEntry(container) {
     container.innerHTML = [
       '<div class="pin-entry">',
-      '  <h2>Admin Access</h2>',
-      '  <input type="password" class="pin-input" id="pin-input" maxlength="8" placeholder="PIN" autocomplete="off">',
-      '  <button class="btn btn-accent" id="pin-submit">Enter</button>',
-      '  <div class="pin-error hidden" id="pin-error">Invalid PIN</div>',
-      '  <a href="#/" class="btn btn-sm mt-16">Back to Dashboard</a>',
+      '  <img class="pin-sign" src="brand/bal-sign.svg" alt="">',
+      '  <h2>Админка</h2>',
+      '  <input type="password" class="pin-input" id="pin-input" maxlength="8" placeholder="PIN" autocomplete="off" inputmode="numeric">',
+      '  <button class="btn btn-accent" id="pin-submit">Войти</button>',
+      '  <div class="pin-error hidden" id="pin-error">Неверный PIN</div>',
+      '  <a href="#/" class="btn btn-sm mt-16">К кортам</a>',
       '</div>'
     ].join('\n');
 
@@ -79,6 +81,7 @@
       .then(function (data) {
         if (data.valid) {
           adminAuthenticated = true;
+          adminPin = pin;
           renderAdminPanel(container);
         } else {
           error.classList.remove('hidden');
@@ -99,16 +102,24 @@
     container.innerHTML = [
       '<div class="admin">',
       '  <div class="admin-header">',
-      '    <h1 class="admin-title">Admin Panel</h1>',
-      '    <div style="display:flex;gap:8px;">',
-      '      <button class="btn btn-sm" id="admin-download">Download State</button>',
-      '      <button class="btn btn-sm btn-danger" id="admin-reset-all">Reset All Courts</button>',
-      '      <a href="#/" class="btn btn-sm">Dashboard</a>',
+      '    <h1 class="admin-title">Админка</h1>',
+      '    <div class="admin-header-actions">',
+      '      <button class="btn btn-sm" id="admin-download">Скачать состояние</button>',
+      '      <button class="btn btn-sm btn-danger" id="admin-reset-all">Сбросить все корты</button>',
+      '      <a href="#/" class="btn btn-sm">К кортам</a>',
       '    </div>',
       '  </div>',
+      '  <form class="admin-event" id="admin-event">',
+      '    <label class="form-label" for="event-title">Название этапа в шапке табло</label>',
+      '    <div class="admin-event-row">',
+      '      <input class="form-input" id="event-title" maxlength="120" placeholder="Москва · 11 октября · ПадлхАБ">',
+      '      <button class="btn btn-accent" type="submit">Показать на табло</button>',
+      '    </div>',
+      '    <span class="admin-event-note" id="event-note"></span>',
+      '  </form>',
       '  <table class="admin-table">',
       '    <thead><tr>',
-      '      <th>Court</th><th>Status</th><th>Team A</th><th>Team B</th><th>Score</th><th>Clients</th><th>Actions</th>',
+      '      <th>Корт</th><th>Статус</th><th>Пара A</th><th>Пара B</th><th>Счёт</th><th>Экранов</th><th></th>',
       '    </tr></thead>',
       '    <tbody id="admin-tbody"></tbody>',
       '  </table>',
@@ -129,9 +140,20 @@
     });
 
     document.getElementById('admin-reset-all').addEventListener('click', function () {
-      if (confirm('Reset ALL courts? This cannot be undone.')) {
-        socket.emit('reset-all-courts', { pin: prompt('Enter Admin PIN:') });
+      if (confirm('Сбросить все корты? Это нельзя отменить.')) {
+        socket.emit('reset-all-courts', { pin: adminPin });
       }
+    });
+
+    var eventInput = document.getElementById('event-title');
+    socket.emit('get-event');
+    socket.on('event-update', function (info) {
+      if (document.activeElement !== eventInput) eventInput.value = (info && info.title) || '';
+    });
+    document.getElementById('admin-event').addEventListener('submit', function (e) {
+      e.preventDefault();
+      socket.emit('set-event', { pin: adminPin, title: eventInput.value.trim() });
+      document.getElementById('event-note').textContent = 'Сохранено — табло обновятся сами.';
     });
 
     socket.emit('get-all-courts');
@@ -174,17 +196,17 @@
 
       html += [
         '<tr>',
-        '  <td><strong>Court ' + i + '</strong></td>',
+        '  <td><strong>Корт ' + i + '</strong></td>',
         '  <td><span class="court-status ' + status + '">' + formatStatus(status) + '</span></td>',
         '  <td>' + escHtml(teamA) + '</td>',
         '  <td>' + escHtml(teamB) + '</td>',
         '  <td style="font-family:var(--font-score);font-variant-numeric:tabular-nums;">' + score + '</td>',
         '  <td>' + clientCount + '</td>',
         '  <td class="admin-actions">',
-        '    <a href="#/court/' + i + '/display" class="btn btn-sm">Display</a>',
-        '    <a href="#/court/' + i + '/control" class="btn btn-sm btn-accent">Control</a>',
+        '    <a href="#/court/' + i + '/display" class="btn btn-sm">ТВ</a>',
+        '    <a href="#/court/' + i + '/control" class="btn btn-sm btn-accent">Пульт</a>',
         '    <button class="btn btn-sm" onclick="showQR(' + i + ')">QR</button>',
-        '    <button class="btn btn-sm btn-danger" onclick="resetCourt(' + i + ')">Reset</button>',
+        '    <button class="btn btn-sm btn-danger" onclick="resetCourt(' + i + ')">Сброс</button>',
         '  </td>',
         '</tr>'
       ].join('\n');
@@ -202,7 +224,7 @@
     modal.innerHTML = [
       '<div class="modal" style="max-width:400px;margin:auto;">',
       '  <div class="modal-title">',
-      '    <span>Court ' + courtId + ' — Control QR</span>',
+      '    <span>Корт ' + courtId + ' — QR для судьи</span>',
       '    <button class="modal-close" onclick="document.getElementById(\'qr-modal\').classList.add(\'hidden\')">&times;</button>',
       '  </div>',
       '  <div class="qr-container">',
@@ -238,16 +260,15 @@
       text: url,
       width: 256,
       height: 256,
-      colorDark: '#FFFFFF',
-      colorLight: '#152236',
+      colorDark: '#111111',
+      colorLight: '#FFFFFF',
       correctLevel: QRCode.CorrectLevel.M
     });
   }
 
   window.resetCourt = function (courtId) {
-    if (confirm('Reset Court ' + courtId + '?')) {
-      var pin = prompt('Enter Admin PIN:');
-      socket.emit('reset-court', { courtId: courtId, pin: pin });
+    if (confirm('Сбросить корт ' + courtId + '?')) {
+      socket.emit('reset-court', { courtId: courtId, pin: adminPin });
     }
   };
 
@@ -265,9 +286,9 @@
   }
 
   function formatStatus(s) {
-    if (s === 'in_progress') return 'In Progress';
-    if (s === 'finished') return 'Finished';
-    return 'Waiting';
+    if (s === 'in_progress') return 'Идёт';
+    if (s === 'finished') return 'Завершён';
+    return 'Ожидание';
   }
 
   function escHtml(str) {

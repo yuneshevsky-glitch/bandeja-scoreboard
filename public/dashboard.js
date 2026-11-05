@@ -11,9 +11,9 @@
     container.innerHTML = [
       '<div class="dashboard">',
       '  <div class="dashboard-header">',
-      '    <h1 class="dashboard-title"><img src="img/logo-white.png" alt="Bandeja"> <span>Bandeja</span> Scoreboard</h1>',
+      '    <h1 class="dashboard-title"><img src="brand/bal-sign.svg" alt="BAL"> Табло <span>кортов</span></h1>',
       '    <div class="dashboard-nav">',
-      '      <a href="#/admin" class="btn btn-sm">Admin</a>',
+      '      <a href="#/admin" class="btn btn-sm">Админка</a>',
       '    </div>',
       '  </div>',
       '  <div class="courts-grid" id="courts-grid"></div>',
@@ -93,7 +93,7 @@
     return [
       '<div class="court-card status-' + status + '" data-court="' + courtId + '">',
       '  <div class="court-card-header">',
-      '    <span class="court-number">Court ' + courtId + '</span>',
+      '    <span class="court-number">Корт ' + courtId + '</span>',
       '    <span class="court-status ' + status + '">' + formatStatus(status) + '</span>',
       '  </div>',
       '  <div class="court-teams">',
@@ -107,17 +107,17 @@
       '    </div>',
       '  </div>',
       '  <div class="court-card-actions">',
-      '    <button class="btn btn-sm btn-display">Display</button>',
-      '    <button class="btn btn-sm btn-accent btn-control">Control</button>',
+      '    <button class="btn btn-sm btn-display">ТВ-экран</button>',
+      '    <button class="btn btn-sm btn-accent btn-control">Пульт судьи</button>',
       '  </div>',
       '</div>'
     ].join('\n');
   }
 
   function formatStatus(s) {
-    if (s === 'in_progress') return 'In Progress';
-    if (s === 'finished') return 'Finished';
-    return 'Waiting';
+    if (s === 'in_progress') return 'Идёт';
+    if (s === 'finished') return 'Завершён';
+    return 'Ожидание';
   }
 
   function escHtml(str) {

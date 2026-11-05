@@ -1,0 +1,452 @@
+[
+ {
+  "id": "m-11m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-11m.jpg",
+  "source": "Мужчины/11м.png"
+ },
+ {
+  "id": "m-12m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-12m.jpg",
+  "source": "Мужчины/12м.png"
+ },
+ {
+  "id": "m-13m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-13m.jpg",
+  "source": "Мужчины/13м.png"
+ },
+ {
+  "id": "m-15m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-15m.jpg",
+  "source": "Мужчины/15м.png"
+ },
+ {
+  "id": "m-16m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-16m.jpg",
+  "source": "Мужчины/16м.png"
+ },
+ {
+  "id": "m-19m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-19m.jpg",
+  "source": "Мужчины/19м.png"
+ },
+ {
+  "id": "m-20m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-20m.jpg",
+  "source": "Мужчины/20м.png"
+ },
+ {
+  "id": "m-25m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-25m.jpg",
+  "source": "Мужчины/25м.png"
+ },
+ {
+  "id": "m-26m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-26m.jpg",
+  "source": "Мужчины/26м.png"
+ },
+ {
+  "id": "m-29m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-29m.jpg",
+  "source": "Мужчины/29м.png"
+ },
+ {
+  "id": "m-7m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-7m.jpg",
+  "source": "Мужчины/7м.png"
+ },
+ {
+  "id": "m-8m",
+  "surname": "",
+  "gender": "m",
+  "photo": "players/m-8m.jpg",
+  "source": "Мужчины/8м.png"
+ },
+ {
+  "id": "m-batin",
+  "surname": "Батин",
+  "gender": "m",
+  "photo": "players/m-batin.jpg",
+  "source": "Мужчины/Батин.png"
+ },
+ {
+  "id": "m-eliseev-1",
+  "surname": "Елисеев",
+  "gender": "m",
+  "photo": "players/m-eliseev-1.jpg",
+  "source": "Мужчины/Елисеев 1.png"
+ },
+ {
+  "id": "m-eliseev2",
+  "surname": "Елисеев",
+  "gender": "m",
+  "photo": "players/m-eliseev2.jpg",
+  "source": "Мужчины/Елисеев2.png"
+ },
+ {
+  "id": "m-zugumov",
+  "surname": "Зугумов",
+  "gender": "m",
+  "photo": "players/m-zugumov.jpg",
+  "source": "Мужчины/Зугумов.png"
+ },
+ {
+  "id": "m-karpushkin",
+  "surname": "Карпушкин",
+  "gender": "m",
+  "photo": "players/m-karpushkin.jpg",
+  "source": "Мужчины/Карпушкин.png"
+ },
+ {
+  "id": "m-kolobov",
+  "surname": "Колобов",
+  "gender": "m",
+  "photo": "players/m-kolobov.jpg",
+  "source": "Мужчины/Колобов.png"
+ },
+ {
+  "id": "m-kolombo",
+  "surname": "Коломбо",
+  "gender": "m",
+  "photo": "players/m-kolombo.jpg",
+  "source": "Мужчины/Коломбо.png"
+ },
+ {
+  "id": "m-lavrikov",
+  "surname": "Лавриков",
+  "gender": "m",
+  "photo": "players/m-lavrikov.jpg",
+  "source": "Мужчины/Лавриков.png"
+ },
+ {
+  "id": "m-litvinov",
+  "surname": "Литвинов",
+  "gender": "m",
+  "photo": "players/m-litvinov.jpg",
+  "source": "Мужчины/Литвинов.png"
+ },
+ {
+  "id": "m-maltsev",
+  "surname": "Мальцев",
+  "gender": "m",
+  "photo": "players/m-maltsev.jpg",
+  "source": "Мужчины/Мальцев.png"
+ },
+ {
+  "id": "m-manyukov",
+  "surname": "Манюков",
+  "gender": "m",
+  "photo": "players/m-manyukov.jpg",
+  "source": "Мужчины/Манюков.png"
+ },
+ {
+  "id": "m-manyukov2",
+  "surname": "Манюков",
+  "gender": "m",
+  "photo": "players/m-manyukov2.jpg",
+  "source": "Мужчины/Манюков2.png"
+ },
+ {
+  "id": "m-matus",
+  "surname": "Матус",
+  "gender": "m",
+  "photo": "players/m-matus.jpg",
+  "source": "Мужчины/Матус.png"
+ },
+ {
+  "id": "m-matus2",
+  "surname": "Матус",
+  "gender": "m",
+  "photo": "players/m-matus2.jpg",
+  "source": "Мужчины/Матус2.png"
+ },
+ {
+  "id": "m-prostakov",
+  "surname": "Простаков",
+  "gender": "m",
+  "photo": "players/m-prostakov.jpg",
+  "source": "Мужчины/Простаков.png"
+ },
+ {
+  "id": "m-rylskiy",
+  "surname": "Рыльский",
+  "gender": "m",
+  "photo": "players/m-rylskiy.jpg",
+  "source": "Мужчины/Рыльский.png"
+ },
+ {
+  "id": "m-tomaydis",
+  "surname": "Томайдис",
+  "gender": "m",
+  "photo": "players/m-tomaydis.jpg",
+  "source": "Мужчины/Томайдис.png"
+ },
+ {
+  "id": "m-tomaydis2",
+  "surname": "Томайдис",
+  "gender": "m",
+  "photo": "players/m-tomaydis2.jpg",
+  "source": "Мужчины/Томайдис2.png"
+ },
+ {
+  "id": "m-trunov",
+  "surname": "Трунов",
+  "gender": "m",
+  "photo": "players/m-trunov.jpg",
+  "source": "Мужчины/Трунов.png"
+ },
+ {
+  "id": "m-khalanskiy",
+  "surname": "Халанский",
+  "gender": "m",
+  "photo": "players/m-khalanskiy.jpg",
+  "source": "Мужчины/Халанский.png"
+ },
+ {
+  "id": "f-14",
+  "surname": "",
+  "gender": "f",
+  "photo": "players/f-14.jpg",
+  "source": "Женщины/14.png"
+ },
+ {
+  "id": "f-15",
+  "surname": "",
+  "gender": "f",
+  "photo": "players/f-15.jpg",
+  "source": "Женщины/15.png"
+ },
+ {
+  "id": "f-25",
+  "surname": "",
+  "gender": "f",
+  "photo": "players/f-25.jpg",
+  "source": "Женщины/25.png"
+ },
+ {
+  "id": "f-6",
+  "surname": "",
+  "gender": "f",
+  "photo": "players/f-6.jpg",
+  "source": "Женщины/6.png"
+ },
+ {
+  "id": "f-7",
+  "surname": "",
+  "gender": "f",
+  "photo": "players/f-7.jpg",
+  "source": "Женщины/7.png"
+ },
+ {
+  "id": "f-blanka-1",
+  "surname": "Бланка",
+  "gender": "f",
+  "photo": "players/f-blanka-1.jpg",
+  "source": "Женщины/Бланка 1.png"
+ },
+ {
+  "id": "f-blanka-2",
+  "surname": "Бланка",
+  "gender": "f",
+  "photo": "players/f-blanka-2.jpg",
+  "source": "Женщины/Бланка 2.png"
+ },
+ {
+  "id": "f-veselova",
+  "surname": "Веселова",
+  "gender": "f",
+  "photo": "players/f-veselova.jpg",
+  "source": "Женщины/Веселова.png"
+ },
+ {
+  "id": "f-isaeva",
+  "surname": "Исаева",
+  "gender": "f",
+  "photo": "players/f-isaeva.jpg",
+  "source": "Женщины/Исаева.png"
+ },
+ {
+  "id": "f-katarina-miller",
+  "surname": "Миллер",
+  "gender": "f",
+  "photo": "players/f-katarina-miller.jpg",
+  "source": "Женщины/Катарина Миллер.png",
+  "name": "Катарина"
+ },
+ {
+  "id": "f-klescherova",
+  "surname": "Клещерова",
+  "gender": "f",
+  "photo": "players/f-klescherova.jpg",
+  "source": "Женщины/Клещерова.png"
+ },
+ {
+  "id": "f-koko",
+  "surname": "Коко",
+  "gender": "f",
+  "photo": "players/f-koko.jpg",
+  "source": "Женщины/Коко.png"
+ },
+ {
+  "id": "f-kolosova-alay",
+  "surname": "Колосова (Алай)",
+  "gender": "f",
+  "photo": "players/f-kolosova-alay.jpg",
+  "source": "Женщины/Колосова (Алай).png"
+ },
+ {
+  "id": "f-kutuzova-1",
+  "surname": "Кутузова",
+  "gender": "f",
+  "photo": "players/f-kutuzova-1.jpg",
+  "source": "Женщины/Кутузова(1).png"
+ },
+ {
+  "id": "f-kutuzova",
+  "surname": "Кутузова",
+  "gender": "f",
+  "photo": "players/f-kutuzova.jpg",
+  "source": "Женщины/Кутузова.png"
+ },
+ {
+  "id": "f-mekhtieva-alina",
+  "surname": "Мехтиева",
+  "gender": "f",
+  "photo": "players/f-mekhtieva-alina.jpg",
+  "source": "Женщины/Мехтиева Алина.png",
+  "name": "Алина"
+ },
+ {
+  "id": "f-mokrousova",
+  "surname": "Мокроусова",
+  "gender": "f",
+  "photo": "players/f-mokrousova.jpg",
+  "source": "Женщины/Мокроусова.png"
+ },
+ {
+  "id": "f-nikitina-1",
+  "surname": "Никитина",
+  "gender": "f",
+  "photo": "players/f-nikitina-1.jpg",
+  "source": "Женщины/Никитина 1.png"
+ },
+ {
+  "id": "f-nikitina-2",
+  "surname": "Никитина",
+  "gender": "f",
+  "photo": "players/f-nikitina-2.jpg",
+  "source": "Женщины/Никитина 2.png"
+ },
+ {
+  "id": "f-ovsyannikova-1",
+  "surname": "Овсянникова",
+  "gender": "f",
+  "photo": "players/f-ovsyannikova-1.jpg",
+  "source": "Женщины/Овсянникова(1).png"
+ },
+ {
+  "id": "f-ovsyannikova-2",
+  "surname": "Овсянникова",
+  "gender": "f",
+  "photo": "players/f-ovsyannikova-2.jpg",
+  "source": "Женщины/Овсянникова(2).png"
+ },
+ {
+  "id": "f-ovsyannikova",
+  "surname": "Овсянникова",
+  "gender": "f",
+  "photo": "players/f-ovsyannikova.jpg",
+  "source": "Женщины/Овсянникова.png"
+ },
+ {
+  "id": "f-petrova-1",
+  "surname": "Петрова",
+  "gender": "f",
+  "photo": "players/f-petrova-1.jpg",
+  "source": "Женщины/Петрова(1).png"
+ },
+ {
+  "id": "f-petrova",
+  "surname": "Петрова",
+  "gender": "f",
+  "photo": "players/f-petrova.jpg",
+  "source": "Женщины/Петрова.png"
+ },
+ {
+  "id": "f-povidalo",
+  "surname": "Повидало",
+  "gender": "f",
+  "photo": "players/f-povidalo.jpg",
+  "source": "Женщины/Повидало.png"
+ },
+ {
+  "id": "f-popova-1",
+  "surname": "Попова",
+  "gender": "f",
+  "photo": "players/f-popova-1.jpg",
+  "source": "Женщины/Попова(1).png"
+ },
+ {
+  "id": "f-popova",
+  "surname": "Попова",
+  "gender": "f",
+  "photo": "players/f-popova.jpg",
+  "source": "Женщины/Попова.png"
+ },
+ {
+  "id": "f-salimova",
+  "surname": "Салимова",
+  "gender": "f",
+  "photo": "players/f-salimova.jpg",
+  "source": "Женщины/Салимова.png"
+ },
+ {
+  "id": "f-sidorova",
+  "surname": "Сидорова",
+  "gender": "f",
+  "photo": "players/f-sidorova.jpg",
+  "source": "Женщины/Сидорова.png"
+ },
+ {
+  "id": "f-tarasova",
+  "surname": "Тарасова",
+  "gender": "f",
+  "photo": "players/f-tarasova.jpg",
+  "source": "Женщины/Тарасова.png"
+ },
+ {
+  "id": "f-tulenkova",
+  "surname": "Туленкова",
+  "gender": "f",
+  "photo": "players/f-tulenkova.jpg",
+  "source": "Женщины/Туленкова.png"
+ },
+ {
+  "id": "f-fateeva",
+  "surname": "Фатеева",
+  "gender": "f",
+  "photo": "players/f-fateeva.jpg",
+  "source": "Женщины/Фатеева.png"
+ }
+]

@@ -28,12 +28,27 @@ app.use(express.json());
 // --- State ---
 
 let courts = {};
+// Название этапа для шапки табло (задаётся в админке).
+let eventInfo = { title: process.env.EVENT_TITLE || '' };
+
+const EMPTY_PLAYERS = () => ({ playersA: [null, null], playersB: [null, null] });
+
+// Игроки на корте и подающий игрок хранятся прямо в состоянии матча,
+// чтобы ТВ получал их вместе со счётом.
+function withPlayers(state, source) {
+  const next = state;
+  const src = source || {};
+  next.playersA = Array.isArray(src.playersA) ? src.playersA.slice(0, 2) : (next.playersA || [null, null]);
+  next.playersB = Array.isArray(src.playersB) ? src.playersB.slice(0, 2) : (next.playersB || [null, null]);
+  next.servingPlayer = src.servingPlayer || next.servingPlayer || { A: 0, B: 0 };
+  return next;
+}
 
 function initCourts() {
   for (let i = 1; i <= NUM_COURTS; i++) {
     courts[i] = {
-      settings: { format: 'A', teamA: '', teamB: '', server: 'A', deuceMode: 'advantage' },
-      matchState: ScoreEngine.createMatch(),
+      settings: { format: 'A', teamA: '', teamB: '', server: 'A', deuceMode: 'advantage', ...EMPTY_PLAYERS() },
+      matchState: withPlayers(ScoreEngine.createMatch()),
       history: []
     };
   }
@@ -45,6 +60,8 @@ function loadState() {
       const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
       if (data && data.courts) {
         courts = data.courts;
+        if (data.eventInfo) eventInfo = data.eventInfo;
+        for (const id of Object.keys(courts)) withPlayers(courts[id].matchState);
         console.log('State restored from', STATE_FILE);
         return;
       }
@@ -58,7 +75,7 @@ function loadState() {
 function saveState() {
   try {
     if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
-    fs.writeFileSync(STATE_FILE, JSON.stringify({ courts, savedAt: Date.now() }));
+    fs.writeFileSync(STATE_FILE, JSON.stringify({ courts, eventInfo, savedAt: Date.now() }));
   } catch (e) {
     console.error('Failed to save state:', e.message);
   }
@@ -94,6 +111,7 @@ function courtPayload(courtId) {
     state: court.matchState,
     historyLength: court.history.length,
     seq: court.seq || 0,
+    event: eventInfo,
     timestamp: Date.now()
   };
 }
@@ -289,6 +307,16 @@ io.on('connection', (socket) => {
           newState.server = payload.server;
           break;
 
+        // Судья тапает конкретного подающего игрока.
+        case 'SET_SERVING_PLAYER': {
+          const team = payload.team === 'B' ? 'B' : 'A';
+          const index = payload.index === 1 ? 1 : 0;
+          newState = ScoreEngine.deepClone(court.matchState);
+          newState.server = team;
+          newState.servingPlayer = { ...(newState.servingPlayer || { A: 0, B: 0 }), [team]: index };
+          break;
+        }
+
         case 'TOGGLE_SERVICE':
           newState = ScoreEngine.deepClone(court.matchState);
           newState.server = newState.server === 'A' ? 'B' : 'A';
@@ -296,11 +324,11 @@ io.on('connection', (socket) => {
 
         case 'RESET_MATCH':
           court.history = [];
-          newState = ScoreEngine.createMatch(court.settings);
+          newState = withPlayers(ScoreEngine.createMatch(court.settings), court.settings);
           break;
 
         case 'UPDATE_SETTINGS':
-          newState = ScoreEngine.updateSettings(court.matchState, payload);
+          newState = withPlayers(ScoreEngine.updateSettings(court.matchState, payload), payload);
           court.settings = { ...court.settings, ...payload };
           break;
 
@@ -330,10 +358,23 @@ io.on('connection', (socket) => {
     }
     if (!courts[courtId]) return;
     courts[courtId].history = [];
-    courts[courtId].matchState = ScoreEngine.createMatch();
-    courts[courtId].settings = { format: 'A', teamA: '', teamB: '', server: 'A', deuceMode: 'advantage' };
+    courts[courtId].matchState = withPlayers(ScoreEngine.createMatch());
+    courts[courtId].settings = { format: 'A', teamA: '', teamB: '', server: 'A', deuceMode: 'advantage', ...EMPTY_PLAYERS() };
     bumpSeq(courtId);
     broadcastCourt(courtId);
+    socket.emit('action-ack', { success: true });
+  });
+
+  socket.on('get-event', () => socket.emit('event-update', eventInfo));
+
+  socket.on('set-event', ({ pin, title }) => {
+    if (pin !== ADMIN_PIN) {
+      socket.emit('action-ack', { success: false, error: 'Invalid PIN' });
+      return;
+    }
+    eventInfo = { ...eventInfo, title: String(title || '').slice(0, 120) };
+    scheduleSave();
+    io.emit('event-update', eventInfo);
     socket.emit('action-ack', { success: true });
   });
 

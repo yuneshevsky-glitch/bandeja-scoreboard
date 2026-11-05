@@ -45,8 +45,8 @@ test('creates a match with default settings', () => {
   const m = SE.createMatch();
   assert.strictEqual(m.status, 'waiting');
   assert.strictEqual(m.format, 'A');
-  assert.strictEqual(m.teamA, 'Team A');
-  assert.strictEqual(m.teamB, 'Team B');
+  assert.strictEqual(m.teamA, 'Пара A');
+  assert.strictEqual(m.teamB, 'Пара B');
   assert.strictEqual(m.pointA, 0);
   assert.strictEqual(m.pointB, 0);
   assert.strictEqual(m.sets.length, 1);
