@@ -110,6 +110,7 @@
       '    <button class="btn btn-sm btn-display">ТВ-экран</button>',
       '    <button class="btn btn-sm btn-accent btn-control">Пульт судьи</button>',
       '  </div>',
+      '  <a class="court-stream-link" href="#/court/' + courtId + '/stream" title="Источник «Браузер» в OBS, 1920×1080">Счёт для трансляции (OBS) ↗</a>',
       '</div>'
     ].join('\n');
   }

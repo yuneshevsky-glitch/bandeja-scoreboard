@@ -147,7 +147,9 @@ function getLocalIPs() {
 
 app.get('/links', (req, res) => {
   const host = req.headers.host || `localhost:${PORT}`;
-  const base = `http://${host}`;
+  // За прокси Render сайт работает по https — берём протокол из заголовка прокси.
+  const proto = (req.headers['x-forwarded-proto'] || 'http').split(',')[0];
+  const base = `${proto}://${host}`;
   const courtsHtml = [];
   for (let i = 1; i <= NUM_COURTS; i++) {
     courtsHtml.push(`
@@ -155,6 +157,7 @@ app.get('/links', (req, res) => {
         <td><strong>Корт ${i}</strong></td>
         <td><a href="${base}/#/court/${i}/control" target="_blank">Судейский контроль</a></td>
         <td><a href="${base}/#/court/${i}/display" target="_blank">ТВ-экран</a></td>
+        <td><a href="${base}/#/court/${i}/stream" target="_blank">${base}/#/court/${i}/stream</a></td>
       </tr>`);
   }
 
@@ -199,12 +202,15 @@ app.get('/links', (req, res) => {
   <h2>Корты</h2>
   <table>
     <thead>
-      <tr><th style="text-align:left">#</th><th style="text-align:left">Судье (телефон)</th><th style="text-align:left">ТВ-экран</th></tr>
+      <tr><th style="text-align:left">#</th><th style="text-align:left">Судье (телефон)</th><th style="text-align:left">ТВ-экран</th><th style="text-align:left">Трансляция (OBS)</th></tr>
     </thead>
     <tbody>
       ${courtsHtml.join('')}
     </tbody>
   </table>
+
+  <h2>Счёт в онлайн-трансляции (OBS)</h2>
+  <p class="note">В OBS: «Источники» → «+» → «Браузер». Вставьте ссылку корта из колонки «Трансляция», ширина 1920, высота 1080. Фон прозрачный — плашка счёта встанет в левый верхний угол кадра; её можно двигать и масштабировать мышкой. Счёт обновляется сам.</p>
 
   <h2>Альтернативные адреса</h2>
   <p class="note">Эти ссылки работают с любого устройства в одной Wi-Fi сети. Если один адрес не открывается — пробуйте другой.</p>

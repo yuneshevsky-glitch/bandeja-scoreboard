@@ -593,6 +593,110 @@ body::before {
 .qr-container #qr-canvas { padding: 12px; border-radius: var(--radius); background: var(--white); }
 .qr-url { font-size: 13px; color: var(--muted); word-break: break-all; text-align: center; }
 
+/* =====================================================================
+   ПЛАШКА СЧЁТА ДЛЯ ТРАНСЛЯЦИИ (OBS, источник «Браузер» 1920×1080)
+   Фон прозрачный, плашка в левом верхнем углу. Размеры — от высоты кадра,
+   поэтому одинаково выглядит и в 1080p, и в 720p.
+   ===================================================================== */
+
+body.is-stream, body.is-stream #app { background: transparent; min-height: 0; }
+body.is-stream::before { display: none; }
+
+.obs {
+  position: fixed;
+  top: 4vh;
+  left: 3.5vh;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6vh;
+  cursor: none;
+}
+.obs-bug {
+  display: flex;
+  align-items: stretch;
+  border-radius: 1vh;
+  overflow: hidden;
+  background: var(--white);
+  box-shadow: 0 0.6vh 2.4vh rgba(0, 0, 0, 0.35);
+}
+.obs-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6vh;
+  padding: 0 1.4vh;
+  background: var(--red);
+  color: var(--white);
+}
+.obs-brand img { height: 3.6vh; width: auto; }
+.obs-brand span { font: 600 1.5vh/1 var(--font-cond); text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+.obs-rows { display: grid; grid-template-rows: 1fr 1fr; }
+.obs-row {
+  display: grid;
+  grid-template-columns: 3vh minmax(18vh, max-content) repeat(var(--num-sets, 3), 4.2vh) 6.4vh;
+  align-items: center;
+  height: 4.8vh;
+}
+.obs-row + .obs-row { border-top: 1px solid var(--line); }
+.obs-ball { display: grid; place-items: center; height: 100%; }
+.obs-ball i { width: 1.9vh; height: 1.9vh; background: var(--ball) center / contain no-repeat; animation: ballIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); }
+.obs-names { padding-right: 1.6vh; font: 900 3.1vh/1 var(--font-xcond); text-transform: uppercase; color: var(--ink); white-space: nowrap; }
+.obs-name.is-serving { color: var(--red); }
+.obs-sep { margin: 0 0.6vh; color: var(--faint); }
+.obs-row.is-winner .obs-name { color: var(--red); }
+.obs-set {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  font: 900 3.1vh/1 var(--font-xcond);
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+  border-left: 1px solid var(--line);
+}
+.obs-set.is-won, .obs-set.is-current { color: var(--ink); }
+.obs-set.is-current { background: var(--paper); }
+.obs-point {
+  display: grid;
+  place-items: center;
+  height: 100%;
+  background: var(--ink);
+  color: var(--white);
+  font: 900 3.3vh/1 var(--font-xcond);
+  font-variant-numeric: tabular-nums;
+}
+.obs-point.is-ad { background: var(--red); }
+.obs-point:empty { background: var(--paper-2); }
+.obs-row.flash-a, .obs-row.flash-b { animation: obsFlash 0.5s ease; }
+@keyframes obsFlash { 30% { background: var(--red-tint); } }
+
+/* Тай-брейк / сет — маленькая подпись под плашкой */
+.obs-status {
+  display: flex;
+  align-items: center;
+  gap: 1vh;
+  padding: 0.6vh 1.2vh;
+  border-radius: 0.6vh;
+  background: var(--red);
+  color: var(--white);
+  font: 600 1.6vh/1 var(--font-cond);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.obs-status:empty { display: none; }
+.obs-status .tv-flag { padding: 0; background: none; color: var(--white); font-weight: 600; }
+.obs-status .tv-dot { width: 0.5vh; height: 0.5vh; }
+
+.court-stream-link {
+  font: 600 13px/1 var(--font-cond);
+  color: var(--muted);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.court-stream-link:hover { color: var(--red); }
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
 }

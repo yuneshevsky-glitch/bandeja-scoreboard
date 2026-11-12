@@ -21,8 +21,14 @@
   var lastSeq = null;
   var wakeLock = null;
 
-  Scoreboard.render = function (container, socket, courtId) {
-    container.innerHTML = [
+  // Режим 'stream' — плашка счёта для OBS (источник «Браузер»): прозрачный фон,
+  // компактный счёт в углу кадра, без полноэкранных заставок.
+  var mode = 'display';
+
+  Scoreboard.render = function (container, socket, courtId, viewMode) {
+    mode = viewMode === 'stream' ? 'stream' : 'display';
+    document.body.classList.toggle('is-stream', mode === 'stream');
+    container.innerHTML = mode === 'stream' ? streamTemplate(courtId) : [
       '<div class="tv" id="scoreboard-view">',
       '  <header class="tv-head">',
       '    <img class="tv-sign" src="brand/bal-sign.svg" alt="Bandeja Amateur League">',
@@ -147,12 +153,78 @@
     var hasPhotos = hasAnyPhoto(state);
     table.classList.toggle('no-photos', !hasPhotos);
 
-    renderRow('sb-row-a', d, state, 'A', numSets);
-    renderRow('sb-row-b', d, state, 'B', numSets);
+    var row = mode === 'stream' ? renderStreamRow : renderRow;
+    row('sb-row-a', d, state, 'A', numSets);
+    row('sb-row-b', d, state, 'B', numSets);
     renderFooter(d, state);
     // Заставка конца матча не должна пережить начало нового.
     if (d.status !== 'finished') hideOverlay();
-    if (animate) handleEvents(d);
+    if (animate) {
+      if (mode === 'stream') flashRow(d.lastEvent && d.lastEvent.team);
+      else handleEvents(d);
+    }
+  }
+
+  function streamTemplate(courtId) {
+    return [
+      '<div class="obs" id="scoreboard-view">',
+      '  <div class="obs-bug">',
+      '    <div class="obs-brand">',
+      '      <img src="brand/bal-sign-white.svg" alt="BAL">',
+      '      <span>Корт ' + courtId + '</span>',
+      '    </div>',
+      '    <div class="obs-rows" id="sb-table">',
+      '      <div class="obs-row" id="sb-row-a"></div>',
+      '      <div class="obs-row" id="sb-row-b"></div>',
+      '    </div>',
+      '  </div>',
+      '  <div class="obs-status" id="sb-footer"></div>',
+      '</div>'
+    ].join('\n');
+  }
+
+  // Строка плашки трансляции: мяч у подающей пары, фамилии (подающий — красным),
+  // геймы по сетам и текущее очко.
+  function renderStreamRow(rowId, d, state, team, numSets) {
+    var row = document.getElementById(rowId);
+    if (!row) return;
+
+    var live = d.status === 'in_progress';
+    var isServerTeam = live && d.server === team;
+    var ids = (team === 'A' ? state.playersA : state.playersB) || [null, null];
+    var servingIdx = (state.servingPlayer && state.servingPlayer[team]) || 0;
+    var players = ids.map(function (id) { return Players.get(id); });
+    var won = d.status === 'finished' && d.winner === team;
+
+    var point = team === 'A' ? d.pointA : d.pointB;
+    if (d.isAdvantage === team) point = 'AD';
+    else if (d.isAdvantage) point = '';
+
+    row.className = 'obs-row' + (isServerTeam ? ' is-serving' : '') + (won ? ' is-winner' : '');
+
+    var names;
+    if (players[0] || players[1]) {
+      names = players.map(function (p, i) {
+        var srv = isServerTeam && servingIdx === i;
+        return '<span class="obs-name' + (srv ? ' is-serving' : '') + '">' +
+          escHtml(p ? p.surname || 'Игрок' : '—') + '</span>';
+      }).join('<span class="obs-sep">/</span>');
+    } else {
+      names = '<span class="obs-name">' + escHtml((team === 'A' ? d.teamA : d.teamB) || '—') + '</span>';
+    }
+
+    var html = '<span class="obs-ball">' + (isServerTeam ? '<i></i>' : '') + '</span>';
+    html += '<span class="obs-names">' + names + '</span>';
+    for (var s = 0; s < numSets; s++) {
+      var games = team === 'A' ? d.sets[s].gamesA : d.sets[s].gamesB;
+      var other = team === 'A' ? d.sets[s].gamesB : d.sets[s].gamesA;
+      var cls = 'obs-set';
+      if (d.sets[s].isCurrentSet && live) cls += ' is-current';
+      else if (games > other) cls += ' is-won';
+      html += '<span class="' + cls + '">' + games + '</span>';
+    }
+    html += '<span class="obs-point' + (point === 'AD' ? ' is-ad' : '') + '">' + (live ? point : '') + '</span>';
+    row.innerHTML = html;
   }
 
   function hasAnyPhoto(state) {
@@ -344,6 +416,7 @@
 
   Scoreboard.destroy = function (socket) {
     clearInterval(timerInterval);
+    document.body.classList.remove('is-stream');
     if (live) {
       clearInterval(live.timer);
       Object.keys(live.handlers).forEach(function (evt) {

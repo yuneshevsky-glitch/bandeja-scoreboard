@@ -20,7 +20,7 @@
     currentView = null;
 
     // Parse route
-    var courtMatch = hash.match(/^#\/court\/(\d+)\/(display|control)$/);
+    var courtMatch = hash.match(/^#\/court\/(\d+)\/(display|control|stream)$/);
     var adminMatch = hash === '#/admin';
 
     if (courtMatch) {
@@ -30,8 +30,8 @@
         location.hash = '#/';
         return;
       }
-      if (mode === 'display') {
-        Scoreboard.render(app, socket, courtId);
+      if (mode === 'display' || mode === 'stream') {
+        Scoreboard.render(app, socket, courtId, mode);
         currentView = Scoreboard;
       } else {
         Controller.render(app, socket, courtId);
@@ -205,6 +205,7 @@
         '  <td class="admin-actions">',
         '    <a href="#/court/' + i + '/display" class="btn btn-sm">ТВ</a>',
         '    <a href="#/court/' + i + '/control" class="btn btn-sm btn-accent">Пульт</a>',
+        '    <button class="btn btn-sm" onclick="copyStreamLink(' + i + ', this)" title="Ссылка для OBS: источник «Браузер», 1920×1080">Трансляция</button>',
         '    <button class="btn btn-sm" onclick="showQR(' + i + ')">QR</button>',
         '    <button class="btn btn-sm btn-danger" onclick="resetCourt(' + i + ')">Сброс</button>',
         '  </td>',
@@ -265,6 +266,22 @@
       correctLevel: QRCode.CorrectLevel.M
     });
   }
+
+  // Ссылка на плашку счёта для OBS. Копируем в буфер; если браузер не даёт —
+  // показываем адрес, чтобы его можно было выделить руками.
+  window.copyStreamLink = function (courtId, btn) {
+    var url = location.origin + '/#/court/' + courtId + '/stream';
+    var done = function () {
+      var old = btn.textContent;
+      btn.textContent = 'Скопировано';
+      setTimeout(function () { btn.textContent = old; }, 1500);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done, function () { prompt('Ссылка для OBS:', url); });
+    } else {
+      prompt('Ссылка для OBS:', url);
+    }
+  };
 
   window.resetCourt = function (courtId) {
     if (confirm('Сбросить корт ' + courtId + '?')) {
