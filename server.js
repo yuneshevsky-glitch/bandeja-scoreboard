@@ -111,6 +111,9 @@ function courtPayload(courtId) {
     state: court.matchState,
     historyLength: court.history.length,
     seq: court.seq || 0,
+    // Какое действие судьи привело к этому состоянию. Заставки «Гейм/Сет/Победа»
+    // табло показывает только после начисления очка, а не после смены подачи и т.п.
+    action: court.lastAction || null,
     event: eventInfo,
     timestamp: Date.now()
   };
@@ -348,6 +351,7 @@ io.on('connection', (socket) => {
       }
 
       court.matchState = newState;
+      court.lastAction = action;
       bumpSeq(courtId);
       socket.emit('action-ack', { success: true, timestamp: Date.now() });
       broadcastCourt(courtId);
@@ -366,6 +370,7 @@ io.on('connection', (socket) => {
     courts[courtId].history = [];
     courts[courtId].matchState = withPlayers(ScoreEngine.createMatch());
     courts[courtId].settings = { format: 'A', teamA: '', teamB: '', server: 'A', deuceMode: 'advantage', ...EMPTY_PLAYERS() };
+    courts[courtId].lastAction = 'RESET';
     bumpSeq(courtId);
     broadcastCourt(courtId);
     socket.emit('action-ack', { success: true });

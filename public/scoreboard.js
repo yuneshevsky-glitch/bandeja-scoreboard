@@ -123,7 +123,10 @@
     var seq = typeof data.seq === 'number' ? data.seq : null;
     var isNextAction = lastSeq !== null && seq !== null && seq === lastSeq + 1;
     if (seq !== null) lastSeq = seq;
-    renderState(data.state, isNextAction);
+    // Анимируем только начисление очка. Смена подачи, отмена, настройки
+    // приходят с тем же lastEvent («гейм» и т.п.) — заставку повторять нельзя.
+    var isPoint = data.action === 'POINT_TEAM_A' || data.action === 'POINT_TEAM_B';
+    renderState(data.state, isNextAction && isPoint);
   }
 
   function setConnBadge(offline) {
@@ -183,8 +186,10 @@
     ].join('\n');
   }
 
-  // Строка плашки трансляции: мяч у подающей пары, фамилии (подающий — красным),
-  // геймы по сетам и текущее очко.
+  // Строка плашки трансляции — та же логика, что у ТВ: по игроку на строку,
+  // мяч у конкретного подающего, геймы по сетам и текущее очко.
+  // Строки — display:contents внутри общей сетки #sb-table, поэтому клетки
+  // обеих пар всегда стоят ровно одна под другой.
   function renderStreamRow(rowId, d, state, team, numSets) {
     var row = document.getElementById(rowId);
     if (!row) return;
@@ -202,28 +207,31 @@
 
     row.className = 'obs-row' + (isServerTeam ? ' is-serving' : '') + (won ? ' is-winner' : '');
 
-    var names;
+    var lines = [];
     if (players[0] || players[1]) {
-      names = players.map(function (p, i) {
-        var srv = isServerTeam && servingIdx === i;
-        return '<span class="obs-name' + (srv ? ' is-serving' : '') + '">' +
-          escHtml(p ? p.surname || 'Игрок' : '—') + '</span>';
-      }).join('<span class="obs-sep">/</span>');
+      for (var i = 0; i < 2; i++) {
+        lines.push({ name: players[i] ? players[i].surname || 'Игрок' : '—', serving: isServerTeam && servingIdx === i });
+      }
     } else {
-      names = '<span class="obs-name">' + escHtml((team === 'A' ? d.teamA : d.teamB) || '—') + '</span>';
+      lines.push({ name: (team === 'A' ? d.teamA : d.teamB) || '—', serving: isServerTeam });
     }
 
-    var html = '<span class="obs-ball">' + (isServerTeam ? '<i></i>' : '') + '</span>';
-    html += '<span class="obs-names">' + names + '</span>';
+    var html = '<div class="obs-cell obs-names">';
+    lines.forEach(function (l) {
+      html += '<div class="obs-player' + (l.serving ? ' is-serving' : '') + '">' +
+        '<span class="obs-ball">' + (l.serving ? '<i aria-label="Подаёт"></i>' : '') + '</span>' +
+        '<span class="obs-name">' + escHtml(l.name) + '</span></div>';
+    });
+    html += '</div>';
     for (var s = 0; s < numSets; s++) {
       var games = team === 'A' ? d.sets[s].gamesA : d.sets[s].gamesB;
       var other = team === 'A' ? d.sets[s].gamesB : d.sets[s].gamesA;
-      var cls = 'obs-set';
+      var cls = 'obs-cell obs-set';
       if (d.sets[s].isCurrentSet && live) cls += ' is-current';
       else if (games > other) cls += ' is-won';
-      html += '<span class="' + cls + '">' + games + '</span>';
+      html += '<div class="' + cls + '">' + games + '</div>';
     }
-    html += '<span class="obs-point' + (point === 'AD' ? ' is-ad' : '') + '">' + (live ? point : '') + '</span>';
+    html += '<div class="obs-cell obs-point' + (point === 'AD' ? ' is-ad' : '') + '">' + (live ? point : '') + '</div>';
     row.innerHTML = html;
   }
 
